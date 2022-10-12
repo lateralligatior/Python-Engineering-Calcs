@@ -1,10 +1,12 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
+from turtle import right
 import numpy as np
 from PIL import Image, ImageTk
 
-verticalBool = False
+
+gravityVector = np.array([])
 massTypeInt = 1
 forceTypeInt = 2
 loadList = []
@@ -104,6 +106,11 @@ def updateForm():
         loopForceVector = np.array([0, 0, 0])
         loopMomentVector = np.array([0, 0, 0])
         loopAccel = allDirectionAccel[i]
+        #print(loopAccel)
+        global gravityVector 
+        loopAccel = loopAccel + gravityVector
+        #print(loopAccel)
+        #print("_____________")
         for load in loadList:
             #print(loopAccel)
             loopForceVector = loopForceVector + load.getForceVector(loopAccel)
@@ -113,8 +120,8 @@ def updateForm():
             #print("")
         allForceArray[i] = loopForceVector
         allMomentArray[i] = loopMomentVector
-    print(allForceArray)
-    print(allMomentArray)
+    #print(allForceArray)
+    #print(allMomentArray)
     xForceList = allForceArray[:,0]
     #print(xForceList)
     absoluteXforceList = np.absolute(xForceList)
@@ -144,8 +151,8 @@ def updateForm():
     zMomentAbsolute = np.absolute(zMomentList)
     zMaxMoment = zMomentAbsolute.max();
 
-    forceResult["text"] = f"Force (N): Fx: {xForceMax}, Fy: {yForceMax}, Fz: {zForceMax}"
-    momentResult["text"] = f"Moment (N*m): Mx: {xMaxMoment}, My: {yMaxMoment}, Mz: {zMaxMoment}"
+    forceResult["text"] = f"Force (N): Fx: {xForceMax:.1f}, Fy: {yForceMax:.1f}, Fz: {zForceMax:.1f}"
+    momentResult["text"] = f"Moment (N*m): Mx: {xMaxMoment:.1f}, My: {yMaxMoment:.1f}, Mz: {zMaxMoment:.1f}"
 
 def addMass():
     name = nameEntry.get()
@@ -173,14 +180,17 @@ def updateAccel():
     xAccel = float(xAccelEntry.get())
     yAccel = float(yAccelEntry.get())
     zAccel = float(zAccelEntry.get())
-    if verticalOrHorizontal.get() == "Horizontal application (gravity pulling in -Z direction":
-        accelList = [xAccel, yAccel, zAccel + 9.81]
-    else:
-        accelList = [xAccel + 9.8, yAccel, zAccel]
-    global accelVector 
+    accelList = np.array([xAccel, yAccel, zAccel])
+    global accelVector
+    global gravityVector
     accelVector= np.array(accelList)
-    
-    accelResult["text"] = f"Accel: {accelVector}"
+    if verticalOrHorizontal.get() == "gravity pulling in -Z direction":
+        gravityVector = np.array([0, 0, 9.81])
+    elif verticalOrHorizontal.get() == "gravity pulling in -X direction":
+        gravityVector = np.array([9.81, 0, 0])
+    elif verticalOrHorizontal.get() == "gravity pulling in -Y direction":
+        gravityVector = np.array([0, 9.81, 0]) 
+    accelResult["text"] = f"Accel(m/s^2): {accelVector}"
 
 def updateLoadListBox():
     displayLoadList = []
@@ -188,6 +198,13 @@ def updateLoadListBox():
         displayLoadList.append(load.toString())
     loadListBox.delete(0, tk.END)
     loadListBox.insert(0, *displayLoadList)
+
+def deleteLoad():
+    loadIndex = loadListBox.curselection()[0]
+    print(loadIndex)
+    loadList.pop(loadIndex)
+    updateLoadListBox()
+
 
 #Set up window
 window = tk.Tk()
@@ -237,11 +254,11 @@ zAccelLabel.grid(row=2, column=0)
 forceNameEntry = tk.Entry(master=frm_entryForce, width=10)
 forceNameLabel = tk.Label(master=frm_entryForce, text="Name:")
 xForceEntry = tk.Entry(master=frm_entryForce, width=10)
-xForceLabel = tk.Label(master=frm_entryForce, text="X force component (mm)")
+xForceLabel = tk.Label(master=frm_entryForce, text="X force component (N)")
 yForceEntry = tk.Entry(master=frm_entryForce, width=10)
-yForceLabel = tk.Label(master=frm_entryForce, text="Y force component (mm)")
+yForceLabel = tk.Label(master=frm_entryForce, text="Y force component (N)")
 zForceEntry = tk.Entry(master=frm_entryForce, width=10)
-zForceLabel = tk.Label(master=frm_entryForce, text="Z force component (mm)")
+zForceLabel = tk.Label(master=frm_entryForce, text="Z force component (N)")
 xPosEntry = tk.Entry(master=frm_entryForce, width=10)
 xPosLabel = tk.Label(master=frm_entryForce, text="X application point (mm)")
 yPosEntry = tk.Entry(master=frm_entryForce, width=10)
@@ -295,6 +312,12 @@ btnAddForce = tk.Button(
     command = addForce
 )
 
+btnDeleteLoad = tk.Button(
+    master=window,
+    text ="Delete Load",
+    command = deleteLoad
+)
+
 momentForceImage = Image.open("ForcesAndMoments.JPG")
 momentForceImage = momentForceImage.resize((325, 200), Image.ANTIALIAS)
 momentForceImage = ImageTk.PhotoImage(momentForceImage)
@@ -305,9 +328,9 @@ forceResult = tk.Label(master=frm_results, text="Force (N):")
 momentResult = tk.Label(master=frm_results, text="Moment (N*m):")
 
 n = tk.StringVar()
-verticalOrHorizontal =ttk.Combobox(master=frm_accel, width = 50, textvariable = n)
-verticalOrHorizontal['values'] = ("Horizontal application (gravity pulling in -Z direction", "Vertical application (gravity pulling in -X direction")
-verticalOrHorizontal.grid(row=3, column = 0, padx = 10)
+verticalOrHorizontal =ttk.Combobox(master=frm_accel, width = 30, textvariable = n)
+verticalOrHorizontal['values'] = ("gravity pulling in -Z direction", "gravity pulling in -X direction", "gravity pulling in -Y direction")
+verticalOrHorizontal.grid(row=3, column = 0, columnspan=2)
 
 accelResult.grid(row=1, column=0, padx=10)
 forceResult.grid(row=2 , column=0, padx=10)
@@ -321,6 +344,7 @@ btnCalc.grid(row=3, column=3, padx=10)
 btnAddMass.grid(row=5, column=1, padx=10)
 btnAddForce.grid(row=7, column=1, padx=10)
 btnUpdateAccel.grid(row=4, column=1, padx=10)
+btnDeleteLoad.grid(row=4, column=2, padx=10)
 
 momentForcePanel.grid(row=0, column=2, padx=10)
 loadListBox.grid(row=2, column=2, padx=10)
