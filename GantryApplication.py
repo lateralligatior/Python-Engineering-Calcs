@@ -22,6 +22,9 @@ directionArray = [[1, 1, 1],
                 [-1, 1, -1],
                 [-1, -1, 1],
                 [-1, -1, -1]]
+ownAccelBase = [[1, 0, 0],
+                [-1, 0, 0]]
+ownAccel = 0
 
 class actuatorLoad:
     name = ""
@@ -99,27 +102,35 @@ def updateForm():
     #print(accelVector)
     #print("")
     allDirectionAccel = np.multiply(accelVector, directionArray)
-    #print(allDirectionAccel)
-    allForceArray = np.zeros((8,3))
-    allMomentArray = np.zeros((8,3))
-    for i in range(8):
-        loopForceVector = np.array([0, 0, 0])
-        loopMomentVector = np.array([0, 0, 0])
-        loopAccel = allDirectionAccel[i]
-        #print(loopAccel)
-        global gravityVector 
-        loopAccel = loopAccel + gravityVector
-        #print(loopAccel)
-        #print("_____________")
-        for load in loadList:
+    ownAccelArray = np.multiply(ownAccel, ownAccelBase)
+    print(ownAccelArray)
+    print(allDirectionAccel)
+    allForceArray = np.zeros((16,3))
+    allMomentArray = np.zeros((16,3))
+    actuatorAccelAdder = 0;
+    for j in range (2):
+        loopOwnAccel = ownAccelArray[j]
+        #print(loopOwnAccel)
+        for i in range(8):
+            loopForceVector = np.array([0, 0, 0])
+            loopMomentVector = np.array([0, 0, 0])
+            loopAccel = allDirectionAccel[i]
             #print(loopAccel)
-            loopForceVector = loopForceVector + load.getForceVector(loopAccel)
-            #print(forceVector)
-            loopMomentVector = loopMomentVector + load.getMomentVector(loopAccel)
-            #print(momentVector)
-            #print("")
-        allForceArray[i] = loopForceVector
-        allMomentArray[i] = loopMomentVector
+            global gravityVector 
+            loopAccel = loopAccel + gravityVector + loopOwnAccel
+            #print(loopAccel)
+            #print(loopAccel)
+            #print("_____________")
+            for load in loadList:
+                #print(loopAccel)
+                loopForceVector = loopForceVector + load.getForceVector(loopAccel)
+                #print(forceVector)
+                loopMomentVector = loopMomentVector + load.getMomentVector(loopAccel)
+                #print(momentVector)
+                #print("")
+            allForceArray[i + actuatorAccelAdder] = loopForceVector
+            allMomentArray[i + actuatorAccelAdder] = loopMomentVector
+        actuatorAccelAdder = 8
     #print(allForceArray)
     #print(allMomentArray)
     xForceList = allForceArray[:,0]
@@ -180,9 +191,12 @@ def updateAccel():
     xAccel = float(xAccelEntry.get())
     yAccel = float(yAccelEntry.get())
     zAccel = float(zAccelEntry.get())
+    global ownAccel 
+    ownAccel = float(ownAccelEntry.get())
     accelList = np.array([xAccel, yAccel, zAccel])
     global accelVector
     global gravityVector
+
     accelVector= np.array(accelList)
     if verticalOrHorizontal.get() == "gravity pulling in -Z direction":
         gravityVector = np.array([0, 0, 9.81])
@@ -190,7 +204,8 @@ def updateAccel():
         gravityVector = np.array([9.81, 0, 0])
     elif verticalOrHorizontal.get() == "gravity pulling in -Y direction":
         gravityVector = np.array([0, 9.81, 0]) 
-    accelResult["text"] = f"Accel(m/s^2): {accelVector}"
+    accelResult["text"] = f"Base Accel(m/s^2): {accelVector}"
+    ownAccelResult["text"] = f"actuator accel(m/s^2): {ownAccel}"
 
 def updateLoadListBox():
     displayLoadList = []
@@ -243,19 +258,24 @@ zComLabel.grid(row=4, column=0)
 
 xAccelEntry = tk.Entry(master=frm_accel, width=10)
 xAccelEntry.insert(END, "0")
-xAccelLabel = tk.Label(master=frm_accel, text="X acceleration (m/s^2)")
+xAccelLabel = tk.Label(master=frm_accel, text="X base acceleration (m/s^2)")
 yAccelEntry = tk.Entry(master=frm_accel, width=10)
 yAccelEntry.insert(END, "0")
-yAccelLabel = tk.Label(master=frm_accel, text="Y acceleration (m/s^2)")
+yAccelLabel = tk.Label(master=frm_accel, text="Y base acceleration (m/s^2)")
 zAccelEntry = tk.Entry(master=frm_accel, width=10)
 zAccelEntry.insert(END, "0")
-zAccelLabel = tk.Label(master=frm_accel, text="Z acceleration (m/s^2)")
+zAccelLabel = tk.Label(master=frm_accel, text="Z base acceleration (m/s^2)")
+ownAccelEntry = tk.Entry(master=frm_accel, width=10)
+ownAccelEntry.insert(END, "0")
+ownAccelLabel = tk.Label(master=frm_accel, text="Actuator acceleration (m/s^2)")
 xAccelEntry.grid(row=0, column=1)
 xAccelLabel.grid(row=0, column=0)
 yAccelEntry.grid(row=1, column=1)
 yAccelLabel.grid(row=1, column=0)
 zAccelEntry.grid(row=2, column=1)
 zAccelLabel.grid(row=2, column=0)
+ownAccelEntry.grid(row=3, column=1)
+ownAccelLabel.grid(row=3, column=0)
 
 
 forceNameEntry = tk.Entry(master=frm_entryForce, width=10)
@@ -337,18 +357,20 @@ momentForceImage = ImageTk.PhotoImage(momentForceImage)
 momentForcePanel = Label(window, image = momentForceImage)
 
 accelResult =tk.Label(master=frm_results, text="Accel (m/s^2):")
+ownAccelResult =tk.Label(master=frm_results, text="actuator Accel (m/s^2):")
 forceResult = tk.Label(master=frm_results, text="Force (N):")
 momentResult = tk.Label(master=frm_results, text="Moment (N*m):")
 
 n = tk.StringVar()
 verticalOrHorizontal =ttk.Combobox(master=frm_accel, width = 30, textvariable = n)
 verticalOrHorizontal['values'] = ("gravity pulling in -Z direction", "gravity pulling in -X direction", "gravity pulling in -Y direction")
-verticalOrHorizontal.grid(row=3, column = 0, columnspan=2)
+verticalOrHorizontal.grid(row=4, column = 0, columnspan=2)
 verticalOrHorizontal.current(0)
 
 accelResult.grid(row=1, column=0, padx=10)
-forceResult.grid(row=2 , column=0, padx=10)
-momentResult.grid(row=3, column=0, padx=10)
+ownAccelResult.grid(row=2, column=0, padx=10)
+forceResult.grid(row=3 , column=0, padx=10)
+momentResult.grid(row=4, column=0, padx=10)
 
 #place frame in window
 frm_entry.grid(row=0, column=0, padx=10)
@@ -357,7 +379,7 @@ frm_accel.grid(row=0, column=3, padx=10)
 btnCalc.grid(row=3, column=3, padx=10)
 btnAddMass.grid(row=5, column=1, padx=10)
 btnAddForce.grid(row=7, column=1, padx=10)
-btnUpdateAccel.grid(row=4, column=1, padx=10)
+btnUpdateAccel.grid(row=5, column=1, padx=10)
 btnDeleteLoad.grid(row=4, column=2, padx=10)
 
 momentForcePanel.grid(row=0, column=2, padx=10)
