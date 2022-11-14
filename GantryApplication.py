@@ -221,16 +221,15 @@ def deleteLoad():
     updateLoadListBox()
 
 
+
 #Set up window
 window = tk.Tk()
 window.title("Vertical Actuator Calculator")
-
+massEntryNoteBook = ttk.Notebook(window)
 #set up entry
-frm_entry = tk.Frame(master=window)
-frm_entryForce = tk.Frame(master=window)
-frm_accel = tk.Frame(master=window)
-frm_results = tk.Frame(master=window)
 
+#mass entry
+frm_entry = tk.Frame(master=massEntryNoteBook)
 nameEntry = tk.Entry(master=frm_entry, width=10)
 nameLabel = tk.Label(master=frm_entry, text="Name:")
 massEntry = tk.Entry(master=frm_entry, width=10)
@@ -255,7 +254,16 @@ yComEntry.grid(row=3, column=1)
 yComLabel.grid(row=3, column=0)
 zComEntry.grid(row=4, column=1)
 zComLabel.grid(row=4, column=0)
+btnAddMass = tk.Button(
+    master=frm_entry,
+    text ="Add Mass",
+    command = addMass
+)
+btnAddMass.grid(row=5, column=1, padx=10)
+frm_entry.grid(row=0, column=0, padx=10)
 
+#accel entry
+frm_accel = tk.Frame(master=massEntryNoteBook)
 xAccelEntry = tk.Entry(master=frm_accel, width=10)
 xAccelEntry.insert(END, "0")
 xAccelLabel = tk.Label(master=frm_accel, text="X base acceleration (m/s^2)")
@@ -276,8 +284,15 @@ zAccelEntry.grid(row=2, column=1)
 zAccelLabel.grid(row=2, column=0)
 ownAccelEntry.grid(row=3, column=1)
 ownAccelLabel.grid(row=3, column=0)
+frm_accel.grid(row=0, column=0, padx=10)
+btnUpdateAccel = tk.Button(
+    master=frm_accel,
+    text ="Update Accel",
+    command = updateAccel
+)
 
-
+#force entry
+frm_entryForce = tk.Frame(master=massEntryNoteBook)
 forceNameEntry = tk.Entry(master=frm_entryForce, width=10)
 forceNameLabel = tk.Label(master=frm_entryForce, text="Name:")
 xForceEntry = tk.Entry(master=frm_entryForce, width=10)
@@ -312,38 +327,33 @@ yPosEntry.grid(row=5, column=1)
 yPosLabel.grid(row=5, column=0)
 zPosEntry.grid(row=6, column=1)
 zPosLabel.grid(row=6, column=0)
-
-#place components in frame
-
-
-
-
-loadListBox = tk.Listbox(window, width= 75)
-
-#set up button
-btnCalc = tk.Button(
-    master=frm_results,
-    text ="calc",
-    command = updateForm
-)
-
-btnAddMass = tk.Button(
-    master=frm_entry,
-    text ="Add Mass",
-    command = addMass
-)
-
-btnUpdateAccel = tk.Button(
-    master=frm_accel,
-    text ="Update Accel",
-    command = updateAccel
-)
-
 btnAddForce = tk.Button(
     master=frm_entryForce,
     text ="Add Force",
     command = addForce
 )
+frm_entryForce.grid(row=0, column=0, padx=10)
+
+#form results
+frm_results = tk.Frame(master=window)
+accelResult =tk.Label(master=frm_results, text="Accel (m/s^2):")
+ownAccelResult =tk.Label(master=frm_results, text="actuator Accel (m/s^2):")
+forceResult = tk.Label(master=frm_results, text="Force (N):")
+momentResult = tk.Label(master=frm_results, text="Moment (N*m):")
+accelResult.grid(row=1, column=0, padx=10)
+ownAccelResult.grid(row=2, column=0, padx=10)
+forceResult.grid(row=3 , column=0, padx=10)
+momentResult.grid(row=4, column=0, padx=10)
+btnCalc = tk.Button(
+    master=frm_results,
+    text ="calc",
+    command = updateForm
+)
+frm_results.grid(row=1, column=0, padx=10)
+
+loadListBox = tk.Listbox(window, width= 75)
+
+#set up button
 
 btnDeleteLoad = tk.Button(
     master=window,
@@ -351,15 +361,13 @@ btnDeleteLoad = tk.Button(
     command = deleteLoad
 )
 
+
 momentForceImage = Image.open("ForcesAndMoments.JPG")
 momentForceImage = momentForceImage.resize((325, 200), Image.ANTIALIAS)
 momentForceImage = ImageTk.PhotoImage(momentForceImage)
 momentForcePanel = Label(window, image = momentForceImage)
 
-accelResult =tk.Label(master=frm_results, text="Accel (m/s^2):")
-ownAccelResult =tk.Label(master=frm_results, text="actuator Accel (m/s^2):")
-forceResult = tk.Label(master=frm_results, text="Force (N):")
-momentResult = tk.Label(master=frm_results, text="Moment (N*m):")
+
 
 n = tk.StringVar()
 verticalOrHorizontal =ttk.Combobox(master=frm_accel, width = 30, textvariable = n)
@@ -367,22 +375,20 @@ verticalOrHorizontal['values'] = ("gravity pulling in -Z direction", "gravity pu
 verticalOrHorizontal.grid(row=4, column = 0, columnspan=2)
 verticalOrHorizontal.current(0)
 
-accelResult.grid(row=1, column=0, padx=10)
-ownAccelResult.grid(row=2, column=0, padx=10)
-forceResult.grid(row=3 , column=0, padx=10)
-momentResult.grid(row=4, column=0, padx=10)
 
 #place frame in window
-frm_entry.grid(row=0, column=0, padx=10)
 frm_entryForce.grid(row=2, column = 0, padx =10)
 frm_accel.grid(row=0, column=3, padx=10)
 btnCalc.grid(row=3, column=3, padx=10)
-btnAddMass.grid(row=5, column=1, padx=10)
 btnAddForce.grid(row=7, column=1, padx=10)
 btnUpdateAccel.grid(row=5, column=1, padx=10)
 btnDeleteLoad.grid(row=4, column=2, padx=10)
 
 momentForcePanel.grid(row=0, column=2, padx=10)
-loadListBox.grid(row=2, column=2, padx=10)
-frm_results.grid(row=2, column=3, padx=10)
+loadListBox.grid(row=1, column=2, padx=10)
+
+massEntryNoteBook.add(frm_entry, text = "Add mass")
+massEntryNoteBook.add(frm_accel, text = "Update accel")
+massEntryNoteBook.add(frm_entryForce, text = "Add Force")
+massEntryNoteBook.grid(row = 0, column =0, padx = 10)
 window.mainloop()
