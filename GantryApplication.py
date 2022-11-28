@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 gravityVector = np.array([])
 massTypeInt = 1
 forceTypeInt = 2
+momentTypeInt = 3
 loadList = []
 displayLoadList = []
 accelList = []
@@ -65,7 +66,7 @@ class massLoad(actuatorLoad):
         return moment
 
     def toString(self):
-        retString = f"(mass load) {self.name}, mass: {self.mass}, x: {self.xPos}, y: {self.yPos}, z: {self.zPos}"
+        retString = f"(mass load) {self.name}, mass: {self.mass}kg, x: {self.xPos}mm, y: {self.yPos}mm, z: {self.zPos}mm"
         return retString
 
 class forceLoad(actuatorLoad):
@@ -95,9 +96,52 @@ class forceLoad(actuatorLoad):
         return moment
     
     def toString(self):
-        retString = f"(Force load) {self.name}, x: {self.xPos}, y: {self.yPos}, z: {self.zPos} force{self.forceVector}"
+        retString = f"(Force load) {self.name}, xPos: {self.xPos}mm, yPos: {self.yPos}mm, zPos: {self.zPos}mm, xForce: {self.xPos}N, yForce: {self.yPos}N, zForce: {self.zPos}N"
         return retString
 
+class momentLoad():
+    name = ""
+    mxMoment = 0
+    myMoment = 0
+    mzMoment = 0
+    def __init__(self, name, mxMoment, myMoment, mzMoment):
+        actuatorLoad.__init__(self, name, 0, 0, 0, momentTypeInt)
+        self.mxMoment = mxMoment
+        self.myMoment = myMoment
+        self.mzMoment = mzMoment
+        self.forceVector = np.array([0, 0, 0])
+    def getForceVector(self, accelVector):
+        force = np.array([0, 0, 0])
+        return force
+
+    def getMomentVector(self, accelVector):
+        moment = np.array([self.mxMoment, self.myMoment, self.mzMoment])
+        return moment
+    
+    def toString(self):
+        retString = f"(Moment load) {self.name}, Mx: {self.mxMoment}Nm, My: {self.myMoment}Nm, Mz: {self.mzMoment}Nm"
+        return retString
+
+
+
+class actuator():
+    name = ""
+    height = 0
+    length = 0
+    width = 0
+    lengthAdder = 0
+    weight = 0 
+    baseWeight = 0
+    weightPer100mm = 0
+    stroke = 0
+    xCom = 0
+    yCom = 0
+    zCom = 0
+    def __init__(self, name):
+        self.name = name
+    
+
+    
 def updateForm():
     #print(accelVector)
     #print("")
@@ -185,6 +229,15 @@ def addForce():
     zPos = float(zPosEntry.get())
     newForceLoad = forceLoad(name, xPos, yPos, zPos, xForce, yForce, zForce)
     loadList.append(newForceLoad)
+    updateLoadListBox()
+
+def addMoment():
+    name = MomentNameEntry.get()
+    mxMoment = float(xMomentEntry.get())
+    myMoment = float(yMomentEntry.get())
+    mzMoment = float(zMomentEntry.get())
+    newMomentLoad = momentLoad(name, mxMoment, myMoment, mzMoment)
+    loadList.append(newMomentLoad)
     updateLoadListBox()
 
 def updateAccel():
@@ -334,6 +387,36 @@ btnAddForce = tk.Button(
 )
 frm_entryForce.grid(row=0, column=0, padx=10)
 
+
+#Moment entry
+frm_entryMoment = tk.Frame(master=massEntryNoteBook)
+MomentNameEntry = tk.Entry(master=frm_entryMoment, width=10)
+MomentNameLabel = tk.Label(master=frm_entryMoment, text="Name:")
+xMomentEntry = tk.Entry(master=frm_entryMoment, width=10)
+xMomentEntry.insert(END, "0")
+xMomentLabel = tk.Label(master=frm_entryMoment, text="X Moment component (Nm)")
+yMomentEntry = tk.Entry(master=frm_entryMoment, width=10)
+yMomentEntry.insert(END, "0")
+yMomentLabel = tk.Label(master=frm_entryMoment, text="Y Moment component (Nm)")
+zMomentEntry = tk.Entry(master=frm_entryMoment, width=10)
+zMomentEntry.insert(END, "0")
+zMomentLabel = tk.Label(master=frm_entryMoment, text="Z Moment component (Nm)")
+MomentNameEntry.grid(row=0, column=1)
+MomentNameLabel.grid(row=0, column=0)
+xMomentEntry.grid(row=1, column=1)
+xMomentLabel.grid(row=1, column=0)
+yMomentEntry.grid(row=2, column=1)
+yMomentLabel.grid(row=2, column=0)
+zMomentEntry.grid(row=3, column=1)
+zMomentLabel.grid(row=3, column=0)
+btnAddMoment = tk.Button(
+    master=frm_entryMoment,
+    text ="Add Moment",
+    command = addMoment
+)
+btnAddMoment.grid(row=4, column=1, padx=10)
+frm_entryMoment.grid(row=0, column=0, padx=10)
+
 #form results
 frm_results = tk.Frame(master=window)
 accelResult =tk.Label(master=frm_results, text="Accel (m/s^2):")
@@ -390,5 +473,7 @@ loadListBox.grid(row=1, column=2, padx=10)
 massEntryNoteBook.add(frm_entry, text = "Add mass")
 massEntryNoteBook.add(frm_accel, text = "Update accel")
 massEntryNoteBook.add(frm_entryForce, text = "Add Force")
+massEntryNoteBook.add(frm_entryMoment, text = "Add Moment")
 massEntryNoteBook.grid(row = 0, column =0, padx = 10)
+globalActuator = actuator("Default actuator")
 window.mainloop()
